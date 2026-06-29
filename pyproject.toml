@@ -1,0 +1,17 @@
+[project]
+name = "fight-intelligence"
+version = "0.1.0"
+description = "Analisi video per sport da combattimento — CV layer MVP"
+requires-python = ">=3.11"
+dependencies = [
+    "ultralytics>=8.3",
+    "opencv-python>=4.10",
+    "pydantic>=2.0",
+]
+
+[project.scripts]
+fight = "main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

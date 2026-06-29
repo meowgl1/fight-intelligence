@@ -1,0 +1,68 @@
+version: "1.0.0"
+
+# Quanti frame guardare indietro per calcolare la velocità di un keypoint.
+# Finestra più grande = meno falsi positivi, ma rileva il colpo più tardi.
+velocity_window_frames: 5
+
+# Se un keypoint YOLO ha confidence sotto questa soglia, lo ignoriamo.
+# Evita di classificare colpi basandosi su punti rilevati male (es. braccio nascosto).
+min_confidence_keypoint: 0.5
+
+# Configurazione del tracker ByteTrack.
+# track_buffer: frame da aspettare prima di perdere un fighter — alzarlo aiuta nel clinch.
+bytetrack:
+  track_thresh: 0.25
+  match_thresh: 0.8
+  track_buffer: 30
+
+# Soglie per ogni tipo di colpo.
+# min_velocity è la velocità minima del keypoint trigger, normalizzata
+# sull'altezza del bounding box del fighter (valori tra 0 e 1 circa).
+# Questo rende le soglie indipendenti dalla distanza dalla telecamera.
+thresholds:
+  jab:
+    keypoint_id: 10        # polso destro (indice COCO)
+    min_velocity: 0.15
+    max_elbow_angle: 160   # gomito quasi esteso
+    # Jab sinistro: per un southpaw, usare keypoint_id: 9 (polso sinistro)
+
+  cross:
+    keypoint_id: 9         # polso sinistro (il cross viene dal lato non dominante)
+    min_velocity: 0.15
+    max_elbow_angle: 160
+
+  hook:
+    keypoint_id: 10
+    min_velocity: 0.10
+    elbow_angle_min: 70    # il gomito è piegato — distingue dall'uppercut e dal jab
+    elbow_angle_max: 110
+
+  uppercut:
+    keypoint_id: 10
+    min_velocity: 0.08
+    # La componente verticale del vettore velocità deve essere > 60% del totale.
+    # Questo distingue l'uppercut (va su) dall'hook (va laterale).
+    vertical_ratio: 0.6
+
+  front_kick:
+    keypoint_id: 16        # caviglia destra
+    min_velocity: 0.20
+    min_hip_extension: 0.7 # anca estesa in avanti — distingue dal ginocchio
+
+  roundhouse_kick:
+    keypoint_id: 16
+    min_velocity: 0.18
+    # La componente laterale deve dominare — il calcio circolare va di lato.
+    lateral_ratio: 0.5
+
+  knee:
+    keypoint_id: 14        # ginocchio destro
+    min_velocity: 0.12
+    vertical_ratio: 0.7    # il ginocchio sale verso l'alto
+
+  elbow:
+    keypoint_id: 8         # gomito destro
+    min_velocity: 0.08
+    # L'elbow arriva da vicino — la distanza dal centro dell'avversario è piccola.
+    # Questo valore è una stima iniziale da calibrare su video reale.
+    max_reach_normalized: 0.3

@@ -1,0 +1,3 @@
+# Placeholder per l'eval harness.
+# Verrà popolato con fixture pytest una volta che il dataset di test è disponibile.
+# Vedi spec.md sezione 4 per la strategia di raccolta del dataset.

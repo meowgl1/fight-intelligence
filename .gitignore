@@ -1,0 +1,32 @@
+# Video e modelli pesanti — mai in git
+data/
+*.pt
+*.onnx
+
+# Ambiente Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Output temporanei
+*.log
+results/
+
+# Video — mai in git (usare storage esterno, path in config)
+*.mp4
+*.mov
+*.avi
+*.mkv
