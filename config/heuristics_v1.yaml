@@ -13,7 +13,7 @@ min_confidence_keypoint: 0.5
 bytetrack:
   track_thresh: 0.25
   match_thresh: 0.8
-  track_buffer: 30
+  track_buffer: 90
 
 # Soglie per ogni tipo di colpo.
 # min_velocity è la velocità minima del keypoint trigger, normalizzata
@@ -44,25 +44,5 @@ thresholds:
     # Questo distingue l'uppercut (va su) dall'hook (va laterale).
     vertical_ratio: 0.6
 
-  front_kick:
-    keypoint_id: 16        # caviglia destra
-    min_velocity: 0.20
-    min_hip_extension: 0.7 # anca estesa in avanti — distingue dal ginocchio
-
-  roundhouse_kick:
-    keypoint_id: 16
-    min_velocity: 0.18
-    # La componente laterale deve dominare — il calcio circolare va di lato.
-    lateral_ratio: 0.5
-
-  knee:
-    keypoint_id: 14        # ginocchio destro
-    min_velocity: 0.12
-    vertical_ratio: 0.7    # il ginocchio sale verso l'alto
-
-  elbow:
-    keypoint_id: 8         # gomito destro
-    min_velocity: 0.08
-    # L'elbow arriva da vicino — la distanza dal centro dell'avversario è piccola.
-    # Questo valore è una stima iniziale da calibrare su video reale.
-    max_reach_normalized: 0.3
+  # front_kick, roundhouse_kick, knee, elbow: disabilitati in Fase 1 (ADR-004).
+  # Riabilitare in Fase 2 quando il dataset include calci verificati.

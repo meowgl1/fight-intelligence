@@ -30,6 +30,7 @@ class Tracker:
             "new_track_thresh": config.get("track_thresh", 0.25),
             "track_buffer": config.get("track_buffer", 30),
             "match_thresh": config.get("match_thresh", 0.8),
+            "fuse_score": False,
         }
         tmp = tempfile.NamedTemporaryFile(
             mode="w", suffix=".yaml", delete=False, prefix="bytetrack_"
@@ -42,6 +43,9 @@ class Tracker:
         # Restituisce la lista di fighter rilevati nel frame,
         # ciascuno con fighter_id stabile, bbox e 17 keypoint COCO.
         return self._pose_model.process_frame(frame)
+
+    def annotated_frame(self):
+        return self._pose_model.annotated_frame()
 
     def cleanup(self):
         # Elimina il file YAML temporaneo creato nel costruttore.

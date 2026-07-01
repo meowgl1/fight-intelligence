@@ -25,6 +25,7 @@ import cv2
 
 from classification.heuristics import HeuristicClassifier, load_config
 from events.builder import EventLogBuilder
+from vision.reid import GloveReID
 from vision.tracker import Tracker
 
 # Config di default se l'utente non specifica --config
@@ -43,6 +44,7 @@ def parse_args() -> tuple[str, str, str]:
     video_path = args[0]
     config_path = str(DEFAULT_CONFIG)
     out_path = ""
+    preview = False
 
     i = 1
     while i < len(args):
@@ -52,6 +54,9 @@ def parse_args() -> tuple[str, str, str]:
         elif args[i] == "--out" and i + 1 < len(args):
             out_path = args[i + 1]
             i += 2
+        elif args[i] == "--preview":
+            preview = True
+            i += 1
         else:
             i += 1
 
@@ -60,7 +65,7 @@ def parse_args() -> tuple[str, str, str]:
         stem = Path(video_path).stem
         out_path = f"{stem}_events.json"
 
-    return video_path, config_path, out_path
+    return video_path, config_path, out_path, preview
 
 
 def resolve_output_path(out_path: str) -> str:
@@ -81,7 +86,7 @@ def resolve_output_path(out_path: str) -> str:
 
 
 def main():
-    video_path, config_path, out_path = parse_args()
+    video_path, config_path, out_path, preview = parse_args()
 
     # Verifica che il video esista prima di caricare i modelli (evita attese inutili).
     if not Path(video_path).exists():
@@ -106,6 +111,7 @@ def main():
         # Questo scrive un file YAML temporaneo e carica il modello YOLO.
         print(f"Carico il modello {CLASSIFIER_MODEL}...")
         tracker = Tracker(bytetrack_config=bytetrack_cfg, model_name=f"{CLASSIFIER_MODEL}.pt")
+        reid = GloveReID()
         classifier = HeuristicClassifier(config)
         builder = EventLogBuilder(
             video_path=video_path,
@@ -121,8 +127,11 @@ def main():
         fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
         total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         frame_number = 0
+        strike_counts: dict[int, int] = {}
 
         print(f"Elaboro {video_path} — {total_frames} frame a {fps:.1f} fps")
+        if preview:
+            print("Preview attiva — premi Q per uscire")
 
         while True:
             ret, frame = cap.read()
@@ -135,7 +144,7 @@ def main():
                 print(f"Processing frame {frame_number}/{total_frames} ({pct:.1f}%)...")
 
             # Otteniamo i fighter tracciati in questo frame con i loro keypoint.
-            fighters = tracker.get_fighters(frame)
+            fighters = reid.assign(frame, tracker.get_fighters(frame))
 
             for f in fighters:
                 builder.track_fighter(f["fighter_id"])
@@ -148,11 +157,29 @@ def main():
                 )
                 if event:
                     builder.add_strike(event)
+                    strike_counts[event.fighter_id] = strike_counts.get(event.fighter_id, 0) + 1
                     print(f"  → Strike: {event.strike_type.value} (fighter {event.fighter_id}, frame {frame_number})")
+
+            if preview:
+                vis = tracker.annotated_frame()
+                if vis is not None:
+                    # Overlay: conteggio strike per fighter in alto a sinistra
+                    y = 30
+                    cv2.putText(vis, f"Frame {frame_number}/{total_frames}", (10, y),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                    for fid, count in sorted(strike_counts.items()):
+                        y += 25
+                        cv2.putText(vis, f"Fighter {fid}: {count} strikes", (10, y),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                    cv2.imshow("Fight Intelligence", vis)
+                    if cv2.waitKey(1) & 0xFF == ord("q"):
+                        break
 
             frame_number += 1
 
         cap.release()
+        if preview:
+            cv2.destroyAllWindows()
         tracker.cleanup()
 
         # Costruiamo e serializziamo l'EventLog.

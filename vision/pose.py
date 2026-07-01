@@ -13,6 +13,12 @@ class PoseModel:
         # Il file si scarica automaticamente da ultralytics al primo avvio.
         self.model = YOLO(model_name)
         self.tracker_config = tracker_config
+        self._last_result = None
+
+    def annotated_frame(self):
+        # Ritorna il frame con scheletro, bbox e ID sovrapposti da ultralytics.
+        # Ritorna None se non è stato ancora processato nessun frame.
+        return self._last_result.plot() if self._last_result is not None else None
 
     def process_frame(self, frame) -> list[dict]:
         # Ritorna una lista di fighter rilevati nel frame.
@@ -24,6 +30,7 @@ class PoseModel:
             tracker=self.tracker_config,
             verbose=False,
         )
+        self._last_result = results[0] if results else None
 
         fighters = []
         if not results or results[0].boxes is None:

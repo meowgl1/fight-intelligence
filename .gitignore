@@ -1,3 +1,9 @@
+# Strumenti AI e documentazione interna — mai in git
+.claude/
+.specify/
+specs/
+CLAUDE.md
+
 # Video e modelli pesanti — mai in git
 data/
 *.pt
@@ -24,6 +30,10 @@ build/
 # Output temporanei
 *.log
 results/
+
+# Event log generati — sample data, non parte del repo
+*_events.json
+*_events_*.json
 
 # Video — mai in git (usare storage esterno, path in config)
 *.mp4

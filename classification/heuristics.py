@@ -49,6 +49,8 @@ class HeuristicClassifier:
         self.min_kp_conf = config.get("min_confidence_keypoint", 0.5)
         # history: fighter_id → deque di snapshot keypoint [[x,y,conf]*17]
         self._history: dict[int, deque] = {}
+        # ponytail: debounce semplice — un colpo per fighter ogni ~0.4s
+        self._last_strike_frame: dict[int, int] = {}
 
     def update(self, fighter_id: int, keypoints: list[list[float]], bbox: list[float], frame_number: int, fps: float) -> StrikeEvent | None:
         # Aggiorna lo storico del fighter e controlla se c'è un colpo.
@@ -59,6 +61,10 @@ class HeuristicClassifier:
 
         # Serve almeno 2 frame per calcolare una velocità.
         if len(self._history[fighter_id]) < 2:
+            return None
+
+        cooldown = max(1, int(fps * 0.4))
+        if frame_number - self._last_strike_frame.get(fighter_id, -cooldown) < cooldown:
             return None
 
         return self._classify(fighter_id, bbox, frame_number, fps)
@@ -100,6 +106,7 @@ class HeuristicClassifier:
             raw_conf = min(velocity / (min_v * 2), 1.0)
             timestamp_ms = int(frame_number / fps * 1000) if fps > 0 else 0
 
+            self._last_strike_frame[fighter_id] = frame_number
             return StrikeEvent(
                 fighter_id=fighter_id,
                 strike_type=StrikeType(strike_name),
